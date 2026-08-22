@@ -13,7 +13,7 @@ load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import your database MetaData for autogenerate support
-from main import Base
+from config.db import Base
 
 # This is the Alembic Config object
 config = context.config
