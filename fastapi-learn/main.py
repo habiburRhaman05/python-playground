@@ -20,7 +20,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-
     # This function acts as a session lifecycle manager
 def get_db():
     db = SessionLocal() # 1. Open a new database session
@@ -37,13 +36,10 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
 
-# Create tables in Neon if they don't exist
-# Base.metadata.create_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 # app.include_router(books_router)
-
 
 class userCreate(BaseModel):
     name : str
@@ -58,8 +54,6 @@ class usercreateRes (BaseModel):
     success: bool
     userData:userData
     message:str
-
-
 
 class allUsers(BaseModel):
     success:bool
@@ -171,3 +165,8 @@ def updateUser(id:int,db:Session=Depends(get_db)):
         }
     except SQLAlchemyError:
         raise HTTPException(status_code=500,detail="failed to delete user data")
+
+
+
+
+
