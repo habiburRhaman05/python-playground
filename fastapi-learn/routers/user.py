@@ -4,6 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from schema.userSchema import userCreate,usercreateRes,allUsers,updateUserPayload
 from sqlalchemy import select,delete
 from sqlalchemy.orm import Session
+from sqlalchemy import exc
 from config.db import get_db
 router = APIRouter(
     prefix="/users",
@@ -49,11 +50,14 @@ def getAllUsers(db: Session = Depends(get_db)):
             "users": users
         }
 
-    except SQLAlchemyError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error"
-        )
+    except exc.SQLAlchemyError as e:
+     db.rollback()
+     print(e._message)
+    # Catch-all fallback for any other unexpected SQLAlchemy errors
+     raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+        detail="A generic database error occurred"
+     )
 
 @router.patch("/{id}",response_model=usercreateRes,status_code=status.HTTP_200_OK)
 def updateUser(id:int,updatePayload:updateUserPayload,db:Session=Depends(get_db)):

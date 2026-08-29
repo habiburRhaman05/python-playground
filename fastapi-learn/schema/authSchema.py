@@ -15,10 +15,16 @@ class loginPayload(BaseModel):
     email:EmailStr
     password:str
 
-class loginResponse(BaseModel):
-    userData:user
-    message:str
-    statusCode:int
+class UserData(BaseModel):
+    id: int
+    email: EmailStr
+    name: str
+
+# 2. Reference it inside your main response model
+class LoginResponse(BaseModel):
+    userData: UserData
+    message: str
+    statusCode: int
 
 class registerResponse(BaseModel):
     userData:user
