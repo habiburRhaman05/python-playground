@@ -9,23 +9,25 @@ ALGORITHM = "HS256"
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     
-    # Calculate expiration time
+    
+    current_time = datetime.now(timezone.utc)
+    
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = current_time + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = current_time + timedelta(minutes=30) 
         
-    # 'exp' must be a timestamp or a datetime object
     to_encode.update({"exp": expire})
     
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 def verify_access_token(token: str) -> dict | None:
-
+    print(token)
     try:
         # PyJWT automatically validates the 'exp' claim during decoding
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(payload)
         return payload
     except ExpiredSignatureError:
         print("Token verification failed: Token has expired.")
