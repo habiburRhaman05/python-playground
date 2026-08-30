@@ -1,37 +1,33 @@
-from utils.jwt_utils import verify_access_token
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from models import User
-from fastapi import HTTPException
+from models.userModel import User  # Ensure this matches your import path exactly
+from fastapi import HTTPException, status
+from utils.jwt_utils import verify_access_token
 
-def getUserFromDB(id:int,db:Session):
-    try :
-         user = db.query(User).filter(User.id == id).first();
-         if not user:
-          raise HTTPException(detail="user not found")
-         return {
-        "name":user.name,
-        "email":user.email,
-        "role":user.role,
-        "id":user.id
-        }
-
-    except SQLAlchemyError as e:
-            raise HTTPException(detail="failed to get user")
-
-
-
-
-def getToken(token: str) -> int | None:
-    # 👈 খুবই গুরুত্বপূর্ণ চেক: যদি টোকেনের শুরুতে 'Bearer ' লেখা থাকে, তা কেটে শুধু আসল টোকেনটুকু নিন
-    print(token)
-  
-    verifyToken = verify_access_token(token)
-    print(verifyToken)
-    if not verifyToken or "sub" not in verifyToken:
-        return None
+def getUserFromDB(db: Session, id: int):
+    """
+    Fetches the user instance directly from the database.
+    Order matched to router: (db, id)
+    """
+    try:
+        user = db.query(User).filter(User.id == id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="User not found"
+            )
+        return user  # Return the object model directly so 'user.email' works in the router
         
-    return int(verifyToken["sub"])
+    except SQLAlchemyError as e:
+        print(f"Database error in getUserFromDB: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="Failed to get user from database"
+        )
 
-     
-
+def getToken(token: str):
+    payload = verify_access_token(token)
+    print("DEBUG payload:", payload)
+    if payload is None:
+        return None
+    return payload.get("sub")  # Extracting 'sub' claim which holds your user ID

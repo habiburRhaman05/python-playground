@@ -22,24 +22,76 @@ router = APIRouter(
 
 @router.get("/me", response_model=UserData, status_code=status.HTTP_200_OK)
 def getUserData(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
+    # 1. Decode token
     userId = getToken(token)
-    print(userId)
-    # সেফটি চেক: টোকেন রিড করতে না পারলে সরাসরি ৪০১ এরর দিন
+    print(f"--- DEBUG: Extracted userId: {userId} ---")
+    
     if not userId:
         raise HTTPException(status_code=401, detail="Invalid token session. Please login again.")
         
-    #  সঠিক অর্ডার: প্রথম প্যারামিটারে db সেশন পাস করুন
-    user = getUserFromDB(db, userId) 
+    # 2. Fetch User from Database safely
+    try:
+        user = getUserFromDB(db, userId) 
+    except Exception as db_err:
+        print(f"--- DATABASE CRASH inside getUserFromDB: {str(db_err)} ---")
+        raise HTTPException(status_code=500, detail="Database lookup failed.")
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
+    # 3. Format output data carefully to match your UserData schema
+    print(f"--- DEBUG: Found database user: {user.email} (ID: {user.id}) ---")
+    
+    try:
+        return {
+            "id": user.id,          # Check if your UserData schema calls this 'id' or something else
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+            "token": token
+        }
+    except Exception as validation_err:
+        print(f"--- PYDANTIC VALIDATION CRASH: {str(validation_err)} ---")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Schema parsing error: Ensure dictionary keys match your UserData model fields."
+        )
+
+def requre_admin(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Session = Depends(get_db)
+):
+    userId = getToken(token)
+
+    if not userId:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )
+
+    user = getUserFromDB(db, userId)
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required"
+        )
+
+    return user
+
+# admin routes 
+@router.get("/users")
+def allUsers(
+    user=Depends(requre_admin)
+):
     return {
-        "id": user.id,
-        "email": user.email,
-        "name": user.name,
-        "role": user.role,
-        "token": token
+        "message": "All users"
     }
 
 
@@ -98,25 +150,25 @@ def loginUser( response:Response, userInfo:OAuth2PasswordRequestForm = Depends()
        if not passwordMatch:
            raise HTTPException(detail="Password not match",status_code=status.HTTP_400_BAD_REQUEST);
        tokenPayload = {
-           "sub":userExist.id,
+           "sub":str(userExist.id),
            "email":userExist.email,
            "name":userExist.name,
            "role":userExist.role
        }
 
-       token = create_access_token(tokenPayload,timedelta(minutes=30));
-       response.set_cookie("token",value=token,httponly=True,samesite='lax',max_age=60*30,secure=True)
+       access_token = create_access_token(data=tokenPayload)
+       response.set_cookie("token",value=access_token,httponly=True,samesite='lax',max_age=60*30,secure=True)
        return {
         "message": "Login successful",
             "statusCode": 200,
-            "access_token": token,  # 👈 মূল টোকেনটি এখানেও পাঠাতে হবে
-            "token_type": "bearer",  # 👈 এটিও থাকতে হবে
+            "access_token": access_token, 
+            "token_type": "bearer", 
             "userData": {
                 "id": userExist.id,
                 "email": userExist.email,
                 "name": userExist.name,
                 "role": userExist.role,
-                "token": token
+                "token": access_token
             }
        }
     except SQLAlchemyError as e:
@@ -124,6 +176,5 @@ def loginUser( response:Response, userInfo:OAuth2PasswordRequestForm = Depends()
         status_code=500, 
         detail="A database error occurred while processing your request. Failed to login"
         )
-
 
 
