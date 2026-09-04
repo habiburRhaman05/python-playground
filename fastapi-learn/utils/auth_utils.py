@@ -5,10 +5,7 @@ from fastapi import HTTPException, status
 from utils.jwt_utils import verify_access_token
 
 def getUserFromDB(db: Session, id: int):
-    """
-    Fetches the user instance directly from the database.
-    Order matched to router: (db, id)
-    """
+ 
     try:
         user = db.query(User).filter(User.id == id).first()
         if not user:

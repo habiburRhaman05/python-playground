@@ -8,8 +8,11 @@ from alembic import context
 from config.db import Base
 from config.env import envVariables
 
-# Import models
-from models import User
+# Import models correctly so they attach to Base.metadata
+from models.userModel import User
+from models.postModel import Post
+from models.commentModel import Comment  # (or whatever your class name is)
+from models.likeModel import Like       # (or whatever your class name is)
 
 
 # Alembic Config object
