@@ -32,8 +32,8 @@ class UserData(BaseModel):
 class LoginResponse(BaseModel):
     message: str
     statusCode: int
-    access_token: str  # 👈 এটি যোগ করা বাধ্যতামূলক
-    token_type: str = "bearer"  # 👈 এটি যোগ করা বাধ্যতামূলক
+    access_token: str  
+    token_type: str = "bearer"  
     userData: UserData
 
 class registerResponse(BaseModel):

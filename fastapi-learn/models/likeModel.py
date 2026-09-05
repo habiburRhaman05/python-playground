@@ -1,18 +1,38 @@
+from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import INTEGER, ForeignKey
-from typing import List,TYPE_CHECKING
+
 from config.db import Base
 
 
-if TYPE_CHECKING :
-    from models.postModel import Post 
+if TYPE_CHECKING:
+    from .postModel import Post
+    from .userModel import User
+
 
 class Like(Base):
     __tablename__ = "likes"
-    
-    id: Mapped[int] = mapped_column(INTEGER, primary_key=True)
-    count: Mapped[int] = mapped_column(INTEGER, default=0)
-    
-    # Assuming a Like belongs to a specific Post
-    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
-    post: Mapped["Post"] = relationship(back_populates="likes")
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+
+    post_id: Mapped[int] = mapped_column(
+        ForeignKey("posts.id")
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id")
+    )
+
+    post: Mapped["Post"] = relationship(
+        "Post",
+        back_populates="likes"
+    )
+
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="likes"
+    )
