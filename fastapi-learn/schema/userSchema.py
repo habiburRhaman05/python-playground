@@ -1,8 +1,7 @@
 from pydantic import BaseModel,EmailStr
 from enum import Enum
-from typing import List
-from .postSchema import post
-from .commentSchema import comment
+from typing import List,ForwardRef
+
 class UserRole(str, Enum):
     ADMIN = "ADMIN"
     USER = "USER"
@@ -11,24 +10,28 @@ class userCreate(BaseModel):
     name : str
     email:EmailStr
 
-class user (BaseModel):
+class User(BaseModel):
     id: int
     name:str
     email:EmailStr
     role:UserRole
-    posts:List[post] = []
-    comments:List[comment] = []
+    posts:List["post"] = []
+    comments:List["comment"] = []
 
 class usercreateRes (BaseModel):
     success: bool
-    userData:user
+    userData:User
     message:str
 
 class allUsers(BaseModel):
     success:bool
     message:str
-    users:List[user] = []
+    users:List["User"] = []
 
 class updateUserPayload(BaseModel):
     name : str | None = None
     email:EmailStr| None = None
+
+from schema.postSchema import post
+from schema.commentSchema import comment
+User.model_rebuild()

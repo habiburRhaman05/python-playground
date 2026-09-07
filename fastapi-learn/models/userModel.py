@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, String, Enum
 from sqlalchemy.orm import Mapped, relationship
 from config.db import Base
 
+
 # TYPE_CHECKING prevents circular import crashes at runtime
 if TYPE_CHECKING:
     from .postModel import Post
@@ -22,6 +23,7 @@ class User(Base):
     password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=True, default=UserRole.USER)
     posts: Mapped[List["Post"]] = relationship("Post", back_populates="author")
+
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="author")
     likes: Mapped[List["Like"]] = relationship(
     "Like",

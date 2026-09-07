@@ -2,12 +2,12 @@ from pydantic import BaseModel,EmailStr
 from fastapi import status,HTTPException,Depends,APIRouter,Response,Header
 from typing import Annotated
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select,update,delete
 from sqlalchemy.exc import SQLAlchemyError
 from config.db import get_db
 from models.userModel import User
 from utils.pwdlib import get_password_hash,verify_password
-from schema.authSchema import registerPayload,registerResponse,loginPayload,LoginResponse,UserData
+from schema.authSchema import UpdateSchema,registerPayload,registerResponse,loginPayload,LoginResponse,UserData
 from utils.jwt_utils import create_access_token
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
@@ -18,8 +18,6 @@ router = APIRouter(
     tags=['auth']
 )
 
-
-
 @router.get("/me", response_model=UserData, status_code=status.HTTP_200_OK)
 def getUserData(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
     # 1. Decode token
@@ -28,7 +26,6 @@ def getUserData(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Dep
     
     if not userId:
         raise HTTPException(status_code=401, detail="Invalid token session. Please login again.")
-        
     # 2. Fetch User from Database safely
     try:
         user = getUserFromDB(db, userId) 
@@ -85,15 +82,14 @@ def requre_admin(
 
     return user
 
-# admin routes 
+# admin routes
 @router.get("/users")
 def allUsers(
-    user=Depends(requre_admin)
+    user=Depends(requre_admin),db:Session=Depends(get_db)
 ):
-    return {
-        "message": "All users"
-    }
-
+    getAllQuery = select(User)
+    allUsers = db.scalars(getAllQuery).all()
+    return allUsers
 
 @router.post("/register",response_model=registerResponse,status_code=status.HTTP_201_CREATED)
 def registerUser(payload:registerPayload,db:Session=Depends(get_db)):
@@ -137,8 +133,6 @@ def registerUser(payload:registerPayload,db:Session=Depends(get_db)):
             detail="Registration failed due to invalid inputs or system constraints."
         )
 
-
-
 @router.post("/login",response_model=LoginResponse,status_code=status.HTTP_200_OK)
 def loginUser( response:Response, userInfo:OAuth2PasswordRequestForm = Depends() ,db: Session=Depends(get_db)):
     try:
@@ -177,4 +171,28 @@ def loginUser( response:Response, userInfo:OAuth2PasswordRequestForm = Depends()
         detail="A database error occurred while processing your request. Failed to login"
         )
 
+
+
+
+@router.put("/me:/id/update")
+async def updateProfile(id:int,payload:UpdateSchema,db:Session=Depends(get_db)):
+    updateData = payload.model_dump(exclude_unset=True);
+    if not updateData:
+        raise HTTPException(details="no field found") 
+    updateQuery = update(User).where(User.id == id).values(**updateData);
+    result = db.execute(updateQuery)
+    if result.rowcount == 0:
+        raise HTTPException(detail="failed to update profile",status_code=500)
+    db.commit();
+    return {"message":"Profile updated successfully"}
+    
+
+@router.delete("/me:/id/update")
+def deleteUser(id:int,user =Depends(requre_admin),db:Session=Depends(get_db)):
+    deleteUser = delete(User).where(User.id == id)
+    result = db.execute(deleteUser);
+    if result.rowcount == 0 :
+        raise HTTPException(detail="failed to delete profile",status_code=500)
+    db.commit()
+    return {"message":"user delated successfully"}
 

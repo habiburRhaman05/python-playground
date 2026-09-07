@@ -3,9 +3,11 @@ from fastapi import status,HTTPException,Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from config.db import get_db
-from models.userModel import User
+
+
 from utils.pwdlib import get_password_hash,verify_password
 import enum
+from typing import List
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
     MODERATOR = "moderator"
@@ -28,6 +30,7 @@ class UserData(BaseModel):
     name: str
     role:UserRole
     token:str | None
+    posts:List["post"] = []
 # 2. Reference it inside your main response model
 class LoginResponse(BaseModel):
     message: str
@@ -45,6 +48,13 @@ class registerPayload(BaseModel):
     password:str
     name:str
     role:UserRole
+
+
+class UpdateSchema(BaseModel):
+    name:str | None 
+
+from .postSchema import post
+from .commentSchema import comment
 
 
 

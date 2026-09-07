@@ -2,6 +2,8 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from config.db import Base
+from models.postModel import Post
+from models.userModel import User
 
 if TYPE_CHECKING:
     from .userModel import User
