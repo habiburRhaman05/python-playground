@@ -18,26 +18,29 @@ router = APIRouter(
     tags=['auth']
 )
 
-@router.get("/me", response_model=UserData, status_code=status.HTTP_200_OK)
-def getUserData(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
-    # 1. Decode token
+def requre_auth(
+        token:Annotated[str, Depends(oauth2_scheme)],
+        db:Session = Depends(get_db)
+):
     userId = getToken(token)
-    print(f"--- DEBUG: Extracted userId: {userId} ---")
-    
     if not userId:
-        raise HTTPException(status_code=401, detail="Invalid token session. Please login again.")
-    # 2. Fetch User from Database safely
-    try:
-        user = getUserFromDB(db, userId) 
-    except Exception as db_err:
-        print(f"--- DATABASE CRASH inside getUserFromDB: {str(db_err)} ---")
-        raise HTTPException(status_code=500, detail="Database lookup failed.")
-    
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )
+
+    user = getUserFromDB(db, userId)
+
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-        
-    # 3. Format output data carefully to match your UserData schema
-    print(f"--- DEBUG: Found database user: {user.email} (ID: {user.id}) ---")
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    return user
+
+
+@router.get("/me", response_model=UserData, status_code=status.HTTP_200_OK)
+def getUserData(user=Depends(requre_auth), db: Session = Depends(get_db)):
     
     try:
         return {
@@ -45,15 +48,13 @@ def getUserData(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Dep
             "email": user.email,
             "name": user.name,
             "role": user.role,
-            "token": token
         }
     except Exception as validation_err:
         print(f"--- PYDANTIC VALIDATION CRASH: {str(validation_err)} ---")
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Schema parsing error: Ensure dictionary keys match your UserData model fields."
         )
-
 def requre_admin(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(get_db)
@@ -104,7 +105,7 @@ def registerUser(payload:registerPayload,db:Session=Depends(get_db)):
             name=payload.name,
             email=payload.email,
             password=hashPassword,
-            role=payload.role
+            role="user"
         )
         db.add(newUser)
         db.commit()
@@ -172,10 +173,8 @@ def loginUser( response:Response, userInfo:OAuth2PasswordRequestForm = Depends()
         )
 
 
-
-
-@router.put("/me:/id/update")
-async def updateProfile(id:int,payload:UpdateSchema,db:Session=Depends(get_db)):
+@router.put("/me/{id}/update")
+async def updateProfile(id:int,payload:UpdateSchema,user=Depends(requre_auth),db:Session=Depends(get_db)):
     updateData = payload.model_dump(exclude_unset=True);
     if not updateData:
         raise HTTPException(details="no field found") 
@@ -187,7 +186,7 @@ async def updateProfile(id:int,payload:UpdateSchema,db:Session=Depends(get_db)):
     return {"message":"Profile updated successfully"}
     
 
-@router.delete("/me:/id/update")
+@router.delete("/me:/{id}/update")
 def deleteUser(id:int,user =Depends(requre_admin),db:Session=Depends(get_db)):
     deleteUser = delete(User).where(User.id == id)
     result = db.execute(deleteUser);
@@ -195,4 +194,17 @@ def deleteUser(id:int,user =Depends(requre_admin),db:Session=Depends(get_db)):
         raise HTTPException(detail="failed to delete profile",status_code=500)
     db.commit()
     return {"message":"user delated successfully"}
+
+
+@router.post("/logout")
+def logoutUser(response:Response,user=Depends(requre_auth),db:Session=Depends(get_db)):
+    try:
+        response.delete_cookie("token")
+        return{
+            "message":"User Logout Successfully",
+            "statusCode":200
+        }
+    except:
+        raise HTTPException(detail="failed to logout",status_code=500)
+
 

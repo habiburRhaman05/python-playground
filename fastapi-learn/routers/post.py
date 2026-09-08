@@ -8,6 +8,7 @@ from config.db import get_db
 from utils.auth_utils import getToken,getUserFromDB
 from schema.userSchema import User
 from models.postModel import Post
+from routers.auth import requre_admin
 router = APIRouter(
     prefix="/post",
     tags=["post"]
@@ -58,7 +59,7 @@ def createPost(payload:postPayload,author:User=Depends(requre_user),db:Session=D
     
 
 
-@router.put("/:id")
+@router.put("/{id}")
 def createPost(id:int,payload:postPayload,author:User=Depends(requre_user),db:Session=Depends(get_db)):
     postStmt = select(Post).options(joinedload(Post.author), selectinload(Post.comments)).where(Post.id == id);
     existPost = db.execute(postStmt).scalar_one_or_none();
@@ -80,7 +81,7 @@ def createPost(id:int,payload:postPayload,author:User=Depends(requre_user),db:Se
     }
 
 
-@router.delete("/:id")
+@router.delete("/{id}")
 def createPost(id:int,author:User=Depends(requre_user),db:Session=Depends(get_db)):
     postStmt = select(Post).where(Post.id == id);
     existPost = db.execute(postStmt).scalar_one_or_none();
@@ -112,3 +113,15 @@ def createPost(author:User=Depends(requre_user),db:Session=Depends(get_db)):
         "status_code":200,
         "posts":result
     }
+
+
+
+@router.get("/all-posts")
+def getAllPosts(admin=Depends(requre_admin),db:Session=Depends(get_db)):
+    allPostsStmt = select(Post).options(joinedload(Post.author))
+    allPosts = db.scalars(allPostsStmt).all()
+    return {
+            "message":"Posts fetch successfully",
+            "status_code":200,
+            "posts":allPosts
+        }
