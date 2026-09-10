@@ -3,6 +3,6 @@ dev:
 
 start:
 	uvicorn main:app
-
+	
 test:
 	pytest

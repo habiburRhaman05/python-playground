@@ -1,5 +1,5 @@
 from pydantic import BaseModel,EmailStr
-from fastapi import status,HTTPException,Depends,APIRouter,Response,Header
+from fastapi import status,HTTPException,Depends,APIRouter,Response,Header,BackgroundTasks
 from typing import Annotated
 from sqlalchemy.orm import Session
 from sqlalchemy import select,update,delete
@@ -13,6 +13,7 @@ from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from utils.security import oauth2_scheme  
 from utils.auth_utils import getToken,getUserFromDB
+from utils.mail_utils import send_mail
 router = APIRouter(
     prefix="/auth",
     tags=['auth']
@@ -93,7 +94,7 @@ def allUsers(
     return allUsers
 
 @router.post("/register",response_model=registerResponse,status_code=status.HTTP_201_CREATED)
-def registerUser(payload:registerPayload,db:Session=Depends(get_db)):
+async def registerUser(payload:registerPayload,bg_task:BackgroundTasks,db:Session=Depends(get_db)):
     try:
         existQuery = select(User).where(User.email == payload.email)
         existingUser = db.execute(existQuery).scalar_one_or_none()
@@ -110,6 +111,12 @@ def registerUser(payload:registerPayload,db:Session=Depends(get_db)):
         db.add(newUser)
         db.commit()
         db.refresh(newUser)
+        print("user created")
+        bg_task.add_task(send_mail,{
+            "name":payload.name,
+            "email":payload.email
+        },"welcome email")
+        
         return {
             "message":"register successsfully",
             "statusCode":status.HTTP_201_CREATED
