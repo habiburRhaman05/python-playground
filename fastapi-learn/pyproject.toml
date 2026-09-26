@@ -9,5 +9,9 @@ dependencies = [
     "alembic",
 ]
 
+# 👇 ADD THIS SECTION BELOW TO FIX THE BUILD ERROR
+[tool.setuptools]
+packages = ["models", "routers", "schema", "config"]
+
 [tool.fastapi]
 entrypoint = "main:app"
