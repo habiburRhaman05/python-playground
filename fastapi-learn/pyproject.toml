@@ -7,8 +7,19 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]",
     "alembic",
-    "psycopg2-binary",
+    "sqlalchemy",
+    "psycopg[binary]",
     "pwdlib[argon2]",
+    "pydantic[email]",
+    "pydantic-settings",
+    "pyjwt",
+    "fastapi-mail",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
 ]
 
 [build-system]
