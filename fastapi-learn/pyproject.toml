@@ -7,12 +7,22 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]",
     "alembic",
-    "psycopg2-binary",  # 👇 ADD THIS DEPENDENCY HERE
+    "psycopg2-binary",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+# 👇 ADD THIS block at the bottom to tell Hatchling exactly what folders to include
+[tool.hatch.build.targets.wheel]
+packages = [
+    "models",
+    "routers",
+    "schema",
+    "config",
+    "utils"
+]
 
 [tool.fastapi]
 entrypoint = "main:app"
