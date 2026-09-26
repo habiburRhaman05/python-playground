@@ -7,11 +7,12 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]",
     "alembic",
+    "psycopg2-binary",  # 👇 ADD THIS DEPENDENCY HERE
 ]
 
-# 👇 ADD THIS SECTION BELOW TO FIX THE BUILD ERROR
-[tool.setuptools]
-packages = ["models", "routers", "schema", "config"]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.fastapi]
 entrypoint = "main:app"
