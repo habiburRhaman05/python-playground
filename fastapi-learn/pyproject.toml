@@ -8,7 +8,7 @@ dependencies = [
     "fastapi[standard]",
     "alembic",
     "psycopg2-binary",
-    "psycopg[binary]",
+    "pwdlib[argon2]",
 ]
 
 [build-system]
