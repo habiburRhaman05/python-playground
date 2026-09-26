@@ -1,0 +1,13 @@
+[project]
+name = "fastapi-learn"
+version = "0.1.0"
+description = "FastAPI learning application"
+readme = "prd.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "alembic",
+]
+
+[tool.fastapi]
+entrypoint = "main:app"

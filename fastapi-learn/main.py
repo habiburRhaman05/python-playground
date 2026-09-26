@@ -66,3 +66,6 @@ async def global_crash_handler(request: Request, exc: Exception):
 @app.get("/")
 def read_root():
     return {"message": "Hello World Fasstapi"}
+@app.get("/health")
+def read_root():
+    return {"health":"ok"}

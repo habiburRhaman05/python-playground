@@ -23,7 +23,6 @@ class User(Base):
     password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=True, default=UserRole.USER)
     posts: Mapped[List["Post"]] = relationship("Post", back_populates="author")
-
     comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="author")
     likes: Mapped[List["Like"]] = relationship(
     "Like",

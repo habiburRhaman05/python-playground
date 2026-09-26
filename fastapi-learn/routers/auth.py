@@ -112,6 +112,7 @@ async def registerUser(payload:registerPayload,bg_task:BackgroundTasks,db:Sessio
         db.commit()
         db.refresh(newUser)
         print("user created")
+        # generate a email verifaction link.
         bg_task.add_task(send_mail,{
             "name":payload.name,
             "email":payload.email
