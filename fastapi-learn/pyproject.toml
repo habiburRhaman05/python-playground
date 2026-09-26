@@ -8,6 +8,7 @@ dependencies = [
     "fastapi[standard]",
     "alembic",
     "psycopg2-binary",
+    "psycopg[binary]",
 ]
 
 [build-system]
